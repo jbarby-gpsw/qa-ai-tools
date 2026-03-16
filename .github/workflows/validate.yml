@@ -1,0 +1,44 @@
+name: Validate Tool Definitions
+
+on:
+  push:
+    paths:
+      - 'tools/**'
+  pull_request:
+    paths:
+      - 'tools/**'
+
+jobs:
+  validate:
+    name: Validate JSON tool schemas
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli@5
+
+      - name: Validate tool definitions against schema
+        run: |
+          ajv validate \
+            -s tools/schemas/tool.schema.json \
+            -d "tools/*.json" \
+            --strict=false
+
+      - name: Validate JSON is well-formed (all tool files)
+        run: |
+          for f in tools/*.json; do
+            echo "Checking $f..."
+            node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))" \
+              && echo "  OK" \
+              || { echo "  FAILED: $f is not valid JSON"; exit 1; }
+          done

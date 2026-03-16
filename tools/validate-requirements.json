@@ -1,0 +1,91 @@
+{
+  "name": "validate_requirements",
+  "description": "Evaluate a set of requirements or acceptance criteria for testability, completeness, and ambiguity. Returns a structured report highlighting unclear, missing, or conflicting requirements along with recommendations to make them testable.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "requirements": {
+        "type": "string",
+        "description": "Requirements, acceptance criteria, or user stories to validate (plain text or Gherkin/BDD format)."
+      },
+      "context": {
+        "type": "string",
+        "description": "Optional product or domain context that helps interpret the requirements."
+      },
+      "checks": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["testability", "completeness", "ambiguity", "consistency", "measurability"]
+        },
+        "description": "Specific quality checks to perform. Defaults to all.",
+        "default": ["testability", "completeness", "ambiguity", "consistency", "measurability"]
+      }
+    },
+    "required": ["requirements"],
+    "additionalProperties": false
+  },
+  "returns": {
+    "type": "object",
+    "description": "Validation results for the requirements.",
+    "properties": {
+      "overall_quality": {
+        "type": "string",
+        "enum": ["good", "acceptable", "needs-improvement", "poor"],
+        "description": "Overall quality rating."
+      },
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "requirement_ref": { "type": "string" },
+            "issue_type": { "type": "string" },
+            "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+            "description": { "type": "string" },
+            "recommendation": { "type": "string" }
+          }
+        }
+      },
+      "testable_criteria": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Rewritten, testable versions of the requirements."
+      }
+    }
+  },
+  "examples": [
+    {
+      "description": "Validate ambiguous performance requirement",
+      "input": {
+        "requirements": "The system should be fast and handle many users at the same time.",
+        "checks": ["testability", "ambiguity", "measurability"]
+      },
+      "output": {
+        "overall_quality": "poor",
+        "issues": [
+          {
+            "requirement_ref": "REQ-1",
+            "issue_type": "ambiguity",
+            "severity": "critical",
+            "description": "'Fast' is not measurable. No latency or throughput target is defined.",
+            "recommendation": "Specify a concrete metric, e.g. 'p99 latency < 200ms under 500 concurrent users'."
+          },
+          {
+            "requirement_ref": "REQ-1",
+            "issue_type": "measurability",
+            "severity": "high",
+            "description": "'Many users' is undefined and cannot be validated by a test.",
+            "recommendation": "Define a concrete concurrency target, e.g. '1,000 concurrent users'."
+          }
+        ],
+        "testable_criteria": [
+          "The API must respond within 200ms at the p99 percentile under a load of 500 concurrent users.",
+          "The system must sustain 1,000 concurrent active sessions without error rates exceeding 0.1%."
+        ]
+      }
+    }
+  ],
+  "tags": ["requirements", "testability", "qa-process", "bdd"],
+  "version": "1.0.0"
+}

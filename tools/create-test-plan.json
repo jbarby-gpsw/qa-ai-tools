@@ -1,0 +1,117 @@
+{
+  "name": "create_test_plan",
+  "description": "Generate a comprehensive test plan for a feature, user story, or requirement. Produces a structured document covering test objectives, scope, test types, entry/exit criteria, and individual test cases with priority levels.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "feature": {
+        "type": "string",
+        "description": "Name or title of the feature or user story to test."
+      },
+      "requirements": {
+        "type": "string",
+        "description": "Feature requirements, acceptance criteria, or user story description."
+      },
+      "test_types": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["unit", "integration", "e2e", "regression", "performance", "security", "accessibility", "usability"]
+        },
+        "description": "Types of testing to include in the plan.",
+        "default": ["unit", "integration", "e2e"]
+      },
+      "risk_areas": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Known risk areas or edge cases that deserve extra attention."
+      },
+      "out_of_scope": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Explicitly excluded areas or test types."
+      },
+      "environment": {
+        "type": "string",
+        "description": "Target environment or environments for testing (e.g. 'staging', 'production-like')."
+      }
+    },
+    "required": ["feature", "requirements"],
+    "additionalProperties": false
+  },
+  "returns": {
+    "type": "object",
+    "description": "Structured test plan document.",
+    "properties": {
+      "objective": { "type": "string" },
+      "scope": {
+        "type": "object",
+        "properties": {
+          "in_scope": { "type": "array", "items": { "type": "string" } },
+          "out_of_scope": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "entry_criteria": { "type": "array", "items": { "type": "string" } },
+      "exit_criteria": { "type": "array", "items": { "type": "string" } },
+      "test_cases": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "type": { "type": "string" },
+            "priority": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+            "preconditions": { "type": "array", "items": { "type": "string" } },
+            "steps": { "type": "array", "items": { "type": "string" } },
+            "expected_result": { "type": "string" }
+          }
+        }
+      },
+      "risks": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "examples": [
+    {
+      "description": "Create a test plan for a user login feature",
+      "input": {
+        "feature": "User Login",
+        "requirements": "Users can log in with email and password. After 5 failed attempts the account is locked for 15 minutes. Passwords are never stored in plain text.",
+        "test_types": ["unit", "integration", "security"],
+        "risk_areas": ["brute-force protection", "SQL injection", "session management"]
+      },
+      "output": {
+        "objective": "Verify that the User Login feature works correctly under normal and adversarial conditions, including account lockout and secure password handling.",
+        "scope": {
+          "in_scope": ["email/password login", "account lockout", "password hashing", "session creation"],
+          "out_of_scope": ["OAuth/SSO login", "password reset flow"]
+        },
+        "entry_criteria": ["Auth service is deployed to staging", "Test user accounts are provisioned"],
+        "exit_criteria": ["All critical and high-priority test cases pass", "No open security findings"],
+        "test_cases": [
+          {
+            "id": "TC-001",
+            "title": "Successful login with valid credentials",
+            "type": "integration",
+            "priority": "critical",
+            "preconditions": ["User account exists with known email and password"],
+            "steps": ["POST /auth/login with valid email and password"],
+            "expected_result": "200 OK with a valid session token"
+          },
+          {
+            "id": "TC-002",
+            "title": "Account locked after 5 failed attempts",
+            "type": "integration",
+            "priority": "critical",
+            "preconditions": ["User account exists"],
+            "steps": ["POST /auth/login with wrong password 5 times"],
+            "expected_result": "6th attempt returns 429 with lockout message"
+          }
+        ],
+        "risks": ["Lockout timer may not be consistent under high load"]
+      }
+    }
+  ],
+  "tags": ["test-planning", "test-cases", "qa-process"],
+  "version": "1.0.0"
+}

@@ -1,0 +1,95 @@
+{
+  "name": "check_coverage",
+  "description": "Analyse existing tests against source code to identify coverage gaps, untested branches, and missing edge cases. Returns a prioritised list of gaps with suggested test cases to fill them.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "source_code": {
+        "type": "string",
+        "description": "Source code (function, module, or file) to check coverage for."
+      },
+      "existing_tests": {
+        "type": "string",
+        "description": "Existing test code for the source. Can be the full test file or just a list of test names."
+      },
+      "language": {
+        "type": "string",
+        "description": "Programming language of the source code."
+      },
+      "coverage_report": {
+        "type": "string",
+        "description": "Optional coverage report output (e.g. from Istanbul, pytest-cov, JaCoCo) to supplement static analysis."
+      },
+      "minimum_coverage": {
+        "type": "integer",
+        "description": "Desired minimum branch/line coverage percentage (0–100).",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 80
+      }
+    },
+    "required": ["source_code", "language"],
+    "additionalProperties": false
+  },
+  "returns": {
+    "type": "object",
+    "description": "Coverage analysis results.",
+    "properties": {
+      "estimated_coverage": {
+        "type": "integer",
+        "description": "Estimated current coverage percentage.",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "meets_minimum": {
+        "type": "boolean",
+        "description": "Whether estimated coverage meets the minimum_coverage threshold."
+      },
+      "gaps": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["branch", "line", "error-path", "edge-case"] },
+            "description": { "type": "string" },
+            "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+            "suggested_test": { "type": "string" }
+          }
+        }
+      },
+      "summary": { "type": "string" }
+    }
+  },
+  "examples": [
+    {
+      "description": "Check coverage for a payment processing module",
+      "input": {
+        "source_code": "def process_payment(amount, card):\n    if amount <= 0:\n        raise ValueError('Amount must be positive')\n    if card.is_expired():\n        return {'status': 'declined', 'reason': 'card_expired'}\n    result = gateway.charge(card, amount)\n    if result.success:\n        return {'status': 'success', 'transaction_id': result.id}\n    return {'status': 'failed', 'reason': result.error}",
+        "existing_tests": "def test_successful_payment(): ...\ndef test_invalid_amount(): ...",
+        "language": "python",
+        "minimum_coverage": 90
+      },
+      "output": {
+        "estimated_coverage": 60,
+        "meets_minimum": false,
+        "gaps": [
+          {
+            "type": "branch",
+            "description": "Expired card path (card.is_expired() == True) is not tested.",
+            "priority": "high",
+            "suggested_test": "test_process_payment_with_expired_card"
+          },
+          {
+            "type": "error-path",
+            "description": "Gateway failure path (result.success == False) is not tested.",
+            "priority": "high",
+            "suggested_test": "test_process_payment_gateway_failure"
+          }
+        ],
+        "summary": "Current coverage is ~60%, below the 90% target. Two high-priority branches are untested."
+      }
+    }
+  ],
+  "tags": ["coverage", "test-quality", "gap-analysis"],
+  "version": "1.0.0"
+}
