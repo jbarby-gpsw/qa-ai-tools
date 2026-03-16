@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jbarby-gpsw/qa-ai-tools/blob/main/tools/schemas/tool.schema.json",
+  "title": "QA AI Tool Definition",
+  "description": "Schema for defining a QA tool that AI assistants can invoke via function calling.",
+  "type": "object",
+  "required": ["name", "description", "parameters"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique tool identifier (snake_case). Used as the function name in AI calls.",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Clear, concise description of what the tool does and when to use it.",
+      "minLength": 10
+    },
+    "parameters": {
+      "type": "object",
+      "description": "JSON Schema object describing the tool's input parameters.",
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "required": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      }
+    },
+    "returns": {
+      "type": "object",
+      "description": "JSON Schema describing the structure of the tool's output.",
+      "properties": {
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "properties": { "type": "object" }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "description": "One or more example invocations showing realistic inputs and outputs.",
+      "items": {
+        "type": "object",
+        "required": ["input", "output"],
+        "properties": {
+          "description": { "type": "string" },
+          "input": { "type": "object" },
+          "output": { "type": "object" }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "description": "Labels for categorising the tool (e.g. 'testing', 'review', 'coverage').",
+      "items": { "type": "string" }
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this tool definition.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  }
+}

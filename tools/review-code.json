@@ -1,0 +1,109 @@
+{
+  "name": "review_code",
+  "description": "Perform a thorough QA-focused code review of a given snippet or file. Identifies bugs, edge-case failures, missing error handling, security issues, and deviations from best practices. Returns structured findings with severity levels and actionable fix suggestions.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "Source code to review."
+      },
+      "language": {
+        "type": "string",
+        "description": "Programming language of the code (e.g. 'python', 'typescript', 'go')."
+      },
+      "focus_areas": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "correctness",
+            "security",
+            "performance",
+            "maintainability",
+            "testability",
+            "error-handling",
+            "accessibility"
+          ]
+        },
+        "description": "Specific categories to prioritise during the review. Defaults to all areas.",
+        "default": ["correctness", "security", "error-handling"]
+      },
+      "context": {
+        "type": "string",
+        "description": "Optional context about the code's purpose, upstream callers, or performance requirements."
+      },
+      "standards": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Coding standards or style guides to check against (e.g. 'PEP 8', 'Google Java Style', 'OWASP Top 10')."
+      }
+    },
+    "required": ["code", "language"],
+    "additionalProperties": false
+  },
+  "returns": {
+    "type": "object",
+    "description": "Structured review results.",
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "High-level assessment of code quality."
+      },
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "severity": {
+              "type": "string",
+              "enum": ["critical", "high", "medium", "low", "info"]
+            },
+            "category": { "type": "string" },
+            "line": { "type": "integer" },
+            "description": { "type": "string" },
+            "suggestion": { "type": "string" }
+          }
+        }
+      },
+      "overall_score": {
+        "type": "integer",
+        "description": "Code quality score from 0 (poor) to 10 (excellent).",
+        "minimum": 0,
+        "maximum": 10
+      }
+    }
+  },
+  "examples": [
+    {
+      "description": "Review a TypeScript function for common issues",
+      "input": {
+        "code": "async function fetchUser(id: string) {\n  const res = await fetch(`/api/users/${id}`);\n  const data = await res.json();\n  return data;\n}",
+        "language": "typescript",
+        "focus_areas": ["error-handling", "security"]
+      },
+      "output": {
+        "summary": "The function lacks error handling for failed HTTP requests and does not validate the 'id' parameter before interpolation.",
+        "findings": [
+          {
+            "severity": "high",
+            "category": "error-handling",
+            "line": 2,
+            "description": "fetch() can reject or return a non-2xx status without throwing. Neither case is handled.",
+            "suggestion": "Check res.ok and wrap in try/catch: if (!res.ok) throw new Error(`HTTP ${res.status}`)."
+          },
+          {
+            "severity": "medium",
+            "category": "security",
+            "line": 1,
+            "description": "The 'id' parameter is interpolated directly into the URL without validation.",
+            "suggestion": "Validate 'id' against an expected format (e.g. UUID) before use."
+          }
+        ],
+        "overall_score": 5
+      }
+    }
+  ],
+  "tags": ["review", "code-quality", "security", "best-practices"],
+  "version": "1.0.0"
+}

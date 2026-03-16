@@ -1,0 +1,115 @@
+{
+  "name": "analyze_bug",
+  "description": "Analyse a bug report, stack trace, or failing test to identify the root cause and propose targeted fixes. Produces a ranked list of hypotheses with supporting evidence and recommended remediation steps.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "description": {
+        "type": "string",
+        "description": "Human-readable description of the observed bug or unexpected behaviour."
+      },
+      "stack_trace": {
+        "type": "string",
+        "description": "Full stack trace or error message from the failing execution, if available."
+      },
+      "code_snippet": {
+        "type": "string",
+        "description": "Relevant source code excerpt where the bug likely originates."
+      },
+      "language": {
+        "type": "string",
+        "description": "Programming language of the affected code."
+      },
+      "steps_to_reproduce": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Ordered list of steps that reliably reproduce the bug."
+      },
+      "environment": {
+        "type": "object",
+        "description": "Runtime environment details (OS, runtime version, dependency versions, etc.).",
+        "properties": {
+          "os": { "type": "string" },
+          "runtime": { "type": "string" },
+          "dependencies": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "required": ["description"],
+    "additionalProperties": false
+  },
+  "returns": {
+    "type": "object",
+    "description": "Root-cause analysis and recommended fixes.",
+    "properties": {
+      "root_cause": {
+        "type": "string",
+        "description": "Most likely root cause of the bug."
+      },
+      "hypotheses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "rank": { "type": "integer" },
+            "hypothesis": { "type": "string" },
+            "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+            "evidence": { "type": "string" }
+          }
+        }
+      },
+      "fix_suggestions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" },
+            "code_patch": { "type": "string" }
+          }
+        }
+      },
+      "recommended_tests": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Test scenarios to add to prevent regression."
+      }
+    }
+  },
+  "examples": [
+    {
+      "description": "Analyse a null-pointer bug in a Python service",
+      "input": {
+        "description": "Service crashes when a user has no email address set.",
+        "stack_trace": "AttributeError: 'NoneType' object has no attribute 'lower'\n  File 'user_service.py', line 42, in normalize_email\n    return user.email.lower()",
+        "language": "python"
+      },
+      "output": {
+        "root_cause": "user.email is None for users who registered without providing an email address. The code does not guard against this before calling .lower().",
+        "hypotheses": [
+          {
+            "rank": 1,
+            "hypothesis": "email field is optional in the data model but treated as required in normalize_email()",
+            "confidence": "high",
+            "evidence": "Stack trace points to line 42 where .lower() is called without a None check."
+          }
+        ],
+        "fix_suggestions": [
+          {
+            "description": "Add a None guard before calling .lower()",
+            "code_patch": "return user.email.lower() if user.email else None"
+          }
+        ],
+        "recommended_tests": [
+          "test_normalize_email_with_none_email",
+          "test_normalize_email_with_empty_string",
+          "test_normalize_email_with_valid_email"
+        ]
+      }
+    }
+  ],
+  "tags": ["debugging", "bug-analysis", "root-cause", "fix-suggestion"],
+  "version": "1.0.0"
+}
